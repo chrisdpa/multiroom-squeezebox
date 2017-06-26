@@ -1,0 +1,17 @@
+---
+
+  - name: Install required packages
+    shell: >
+      apt-get install -y libsox-fmt-all libflac-dev libfaad2 libmad0
+
+  - name: Get the most recent server packages
+    shell: >
+      curl http://downloads.slimdevices.com/LogitechMediaServer_v7.9.0/logitechmediaserver_7.9.0_all.deb > logitechmediaserver_7.9.0_all.deb
+
+  - name: Install logitech media server
+    shell: >
+      dpkg -i logitechmediaserver_7.9.0_all.deb
+
+  - name: Fix permissions
+    shell: >
+      chown -R squeezeboxserver:nogroup /usr/share/squeezeboxserver/

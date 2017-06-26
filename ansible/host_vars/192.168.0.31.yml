@@ -1,0 +1,4 @@
+---
+player_audio_card: iqaudio-digi-wm8804-audio
+location_name: Lounge
+media_player_output_device: default:CARD=IQAudIODigi

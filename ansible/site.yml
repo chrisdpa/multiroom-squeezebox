@@ -1,0 +1,7 @@
+---
+  # - include: mediaserver.yml
+
+- hosts: mediaplayers
+  roles:
+    - common
+    - player

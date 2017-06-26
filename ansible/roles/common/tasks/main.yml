@@ -1,0 +1,126 @@
+---
+  - name: Update everything (this will be slow as everything will be updated)
+    become: true
+    shell: >
+      apt-get -y update &&
+      apt-get -y dist-upgrade
+    tags: update_all
+
+  - name: Setup network interface
+    become: true
+    copy:
+      dest: /etc/network/interfaces
+      content: |
+        ##
+        ## Managed by Ansible - multiroom-squeezebox/ansible/roles/common/tasks/main.yml
+        ##
+        # interfaces(5) file used by ifup(8) and ifdown(8)
+
+        # Please note that this file is written to be used with dhcpcd
+        # For static IP, consult /etc/dhcpcd.conf and 'man dhcpcd.conf'
+
+        # Include files from /etc/network/interfaces.d:
+        source-directory /etc/network/interfaces.d
+
+        auto lo
+        iface lo inet loopback
+
+        iface eth0 inet manual
+
+        allow-hotplug wlan0
+        iface wlan0 inet dhcp
+            wpa-ssid "{{wpa_ssid}}"
+            wpa-psk "{{wpa_psk}}"
+
+        allow-hotplug wlan1
+        iface wlan1 inet manual
+            wpa-conf /etc/wpa_supplicant/wpa_supplicant.conf
+
+  - name: Create .ssh directory
+    file:
+      path: /home/pi/.ssh/
+      state: directory
+      mode: 0700
+      owner: pi
+      group: pi
+
+  - name: Put your public key in authorized_keys to allow access via SSH
+    copy:
+      src: "~/.ssh/id_rsa.pub"
+      dest: /home/pi/.ssh/authorized_keys
+      owner: pi
+      group: pi
+      mode: 0400
+
+  - name: Wifi checker service file
+    become: true
+    copy:
+      dest: /usr/bin/wifichecker.sh
+      mode: 0744
+      content: |
+        #! /bin/sh
+        ##
+        ## Managed by Ansible - multiroom-squeezebox/ansible/roles/common/tasks/main.yml
+        ##
+        while true; do
+          ping -c3 192.168.0.1 > /dev/null
+
+          if [ $? != 0 ]
+          then
+            echo "No network connection, restarting wlan0"
+            /sbin/ifdown 'wlan0'
+            sleep 5
+            /sbin/ifup --force 'wlan0'
+            sleep 10
+
+            ping -c3 192.168.0.1 > /dev/null
+
+            if [ $? != 0 ]
+            then
+              echo "No network connection, restarting device"
+              sudo /sbin/shutdown -r now
+            fi
+          fi
+          sleep 30
+        done
+
+  - name: Service file for wifichecker
+    become: true
+    copy:
+      dest: /etc/systemd/system/wifichecker.service
+      content: |
+        [Unit]
+        Description=Wifi Checker
+        After=logitechmediaserver.service
+
+        [Service]
+        Type=simple
+        ExecStart=/usr/bin/wifichecker.sh
+        Restart=always
+
+        [Install]
+        WantedBy=multi-user.target
+
+  - name: Enable wifichecker
+    become: true
+    systemd:
+      name: wifichecker.service
+      state: started
+      enabled: true
+
+  - name: Set the hostname for bonjour
+    become: true
+    lineinfile:
+      path: /etc/hosts
+      regexp: '^127.0.1.1'
+      line: '127.0.1.1    {{location_name}}'
+
+  - name: Set hostname file
+    become: true
+    copy:
+      dest: /etc/hostname
+      content: "{{location_name}}"
+
+  - name: Call hostname script
+    become: true
+    shell: /etc/init.d/hostname.sh

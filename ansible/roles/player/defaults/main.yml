@@ -1,0 +1,3 @@
+---
+  media_server_ip: music.local
+  media_player_output_device: default:CARD=IQAudIODigi

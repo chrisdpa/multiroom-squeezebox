@@ -1,0 +1,57 @@
+---
+
+  - name: Update boot config with correct soundcard
+    become: true
+    lineinfile:
+      path: /boot/config.txt
+      regexp: '^#?dtoverlay='
+      line: 'dtoverlay={{player_audio_card}},auto_mute_amp'
+
+  - name: Disable standard audio
+    become: true
+    lineinfile:
+      path: /boot/config.txt
+      regexp: '^dtparam=audio=on'
+      line: '#dtparam=audio=on'
+
+  - name: Install required packages
+    become: true
+    shell: >
+      sudo apt-get install -y libflac-dev libfaad2 libmad0 libflac-dev libfaad2 libmad0
+
+  - name: Get squeezelite binary
+    become: true
+    get_url:
+      url: http://ralph_irving.users.sourceforge.net/pico/squeezelite-armv6hf-noffmpeg
+      dest: /usr/bin/squeezelite-armv6hf
+      mode: 0744
+
+  - name: Copy the service file for squeezelite
+    become: true
+    copy:
+      dest: /etc/systemd/system/squeezeboxlite.service
+      content: |
+        [Unit]
+        Description=Squeezebox Lite
+        After=logitechmediaserver.service
+
+        [Service]
+        Type=simple
+        ExecStart=/usr/bin/squeezelite-armv6hf -o {{media_player_output_device}} -s {{media_server_ip}} -n {{location_name}}
+        Restart=always
+
+        [Install]
+        WantedBy=multi-user.target
+    register: service
+
+  - name: Reload on change
+    become: true
+    shell: systemctl daemon-reload
+    when: service|changed
+
+  - name: Enable squeezeboxlite
+    become: true
+    systemd:
+      name: squeezeboxlite.service
+      state: started
+      enabled: true
