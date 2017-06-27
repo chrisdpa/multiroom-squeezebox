@@ -114,13 +114,16 @@
       path: /etc/hosts
       regexp: '^127.0.1.1'
       line: '127.0.1.1    {{location_name}}'
+    register: hosts
 
   - name: Set hostname file
     become: true
     copy:
       dest: /etc/hostname
       content: "{{location_name}}"
+    register: hostname
 
   - name: Call hostname script
     become: true
     shell: /etc/init.d/hostname.sh
+    when: hosts|changed or hostname|changed

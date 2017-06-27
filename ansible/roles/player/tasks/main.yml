@@ -11,13 +11,21 @@
     become: true
     lineinfile:
       path: /boot/config.txt
-      regexp: '^dtparam=audio=on'
-      line: '#dtparam=audio=on'
+      regexp: "^dtparam=audio=on"
+      state: absent
 
   - name: Install required packages
     become: true
-    shell: >
-      sudo apt-get install -y libflac-dev libfaad2 libmad0 libflac-dev libfaad2 libmad0
+    apt:
+      name: "{{item}}"
+      state: present
+    with_items:
+      - libflac-dev
+      - libfaad2
+      - libmad0
+      - libflac-dev
+      - libfaad2
+      - libmad0
 
   - name: Get squeezelite binary
     become: true
@@ -37,7 +45,7 @@
 
         [Service]
         Type=simple
-        ExecStart=/usr/bin/squeezelite-armv6hf -o {{media_player_output_device}} -s {{media_server_ip}} -n {{location_name}}
+        ExecStart=/usr/bin/squeezelite-armv6hf -o {{media_player_output_device}} -s {{media_server_ip}} -n {{media_player_name|default(location_name)}}
         Restart=always
 
         [Install]
