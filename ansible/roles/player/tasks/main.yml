@@ -6,6 +6,7 @@
       path: /boot/config.txt
       regexp: '^#?dtoverlay='
       line: 'dtoverlay={{player_audio_card}},auto_mute_amp'
+    register: boot_updated
 
   - name: Disable standard audio
     become: true
@@ -20,9 +21,6 @@
       name: "{{item}}"
       state: present
     with_items:
-      - libflac-dev
-      - libfaad2
-      - libmad0
       - libflac-dev
       - libfaad2
       - libmad0

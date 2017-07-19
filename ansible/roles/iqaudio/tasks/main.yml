@@ -1,0 +1,24 @@
+---
+  - name: Set ALSA Mixer config
+    file:
+      dest: /var/lib/alsa/asound.state
+      content: |
+        state.{{card_type}} {
+          control.1 {
+            iface MIXER
+            name 'Tx Source'
+            value AIF
+            comment {
+              access 'read write'
+              type ENUMERATED
+              count 1
+              item.0 'S/PDIF RX'
+              item.1 AIF
+            }
+          }
+        }
+    register: alsa_config
+
+  - name: Load config
+    shell: /usr/sbin/alsactl restore {{card_type}}
+    when: alsa_config|changed

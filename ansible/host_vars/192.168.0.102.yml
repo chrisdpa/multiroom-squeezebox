@@ -1,0 +1,5 @@
+---
+# TODO discover this
+player_audio_card: iqaudio-dacplus
+location_name: Portable
+media_player_output_device: default:CARD=IQaudIODAC
